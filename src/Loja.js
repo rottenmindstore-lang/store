@@ -5,7 +5,7 @@ import { db } from './firebase';
 import { trackPageView } from './analytics';
 import { useNavigate, useParams, Routes, Route, useLocation } from 'react-router-dom';
 import logoMark from './assets/logo-mark.png';
-import logoPng from './assets/logo.png';
+import logoPng from './assets/logo.png'; // eslint-disable-line no-unused-vars
 import PromoPopup from './components/PromoPopup';
 import './Loja.css';
 
@@ -71,10 +71,12 @@ const SITE_LINKS_EN = [
 function LojaNav({ lang, setLang, backHref, storeUrl, filterProps, categorias }) {
   const navigate = useNavigate();
   const isPt = lang === 'pt-BR';
-  const [langOpen, setLangOpen] = useState(false);
+  const [_langOpen, setLangOpen] = useState(false); // eslint-disable-line no-unused-vars
   const [menuOpen, setMenuOpen] = useState(false);
   const langRef = useRef(null);
   const siteLinks = isPt ? SITE_LINKS_PT : SITE_LINKS_EN;
+  const logoUrl = useLogoUrl();
+  const bannerConfig = useBannerConfig();
 
   // fecha ao clicar fora ou pressionar Escape
   useEffect(() => {
@@ -112,21 +114,23 @@ function LojaNav({ lang, setLang, backHref, storeUrl, filterProps, categorias })
           </button>
 
           {/* logo — só desktop, com confirmação */}
-          <button
-            type="button"
-            className="loja-nav-site-link loja-nav-logo-desktop"
-            onClick={() => {
-              const msg = isPt ? 'Tem certeza que deseja sair da loja?' : 'Are you sure you want to leave the store?';
-              if (window.confirm(msg)) window.location.href = 'https://mindofadeadbody.com.br';
-            }}
-            aria-label="mindofadeadbody.com.br"
-          >
-            <img
-              src={`${process.env.PUBLIC_URL}/logo.png`}
-              alt=""
-              className="loja-nav-site-logo"
-            />
-          </button>
+          {bannerConfig.showLogo && (
+            <button
+              type="button"
+              className="loja-nav-site-link loja-nav-logo-desktop"
+              onClick={() => {
+                const msg = isPt ? 'Tem certeza que deseja sair da loja?' : 'Are you sure you want to leave the store?';
+                if (window.confirm(msg)) window.location.href = 'https://mindofadeadbody.com.br';
+              }}
+              aria-label="mindofadeadbody.com.br"
+            >
+              <img
+                src={logoUrl}
+                alt=""
+                className="loja-nav-site-logo"
+              />
+            </button>
+          )}
         </div>
 
         {/* direita: hamburguer (mobile) */}
@@ -144,30 +148,7 @@ function LojaNav({ lang, setLang, backHref, storeUrl, filterProps, categorias })
         </div>
       </header>
 
-      {/* disclaimer — fixo abaixo do nav no desktop */}
-      {storeUrl && (
-        <div className="loja-disclaimer loja-disclaimer--fixed" role="note">
-          <svg className="loja-disclaimer-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-            <circle cx="10" cy="10" r="8.5" stroke="currentColor" strokeWidth="1.2"/>
-            <path d="M10 9v5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
-            <circle cx="10" cy="6.5" r=".8" fill="currentColor"/>
-          </svg>
-          <span className="loja-disclaimer-text">
-            {isPt ? (
-              <>Este site é um <strong>mostruário</strong> — todas as compras são finalizadas na{' '}
-              <strong>Hotprinti</strong>, plataforma de print on demand parceira.
-              Os itens são produzidos sob demanda e enviados diretamente por eles.</>
-            ) : (
-              <>This site is a <strong>showcase</strong> — all purchases are completed on{' '}
-              <strong>Hotprinti</strong>, our print on demand partner platform.
-              Items are produced on demand and shipped directly by them.</>
-            )}
-          </span>
-          <a className="loja-disclaimer-link" href={storeUrl} target="_blank" rel="noreferrer">
-            {isPt ? 'Ir para a loja →' : 'Go to store →'}
-          </a>
-        </div>
-      )}
+
 
       {/* drawer mobile */}
       {menuOpen && (
@@ -267,26 +248,7 @@ function LojaNav({ lang, setLang, backHref, storeUrl, filterProps, categorias })
 
 // --- helpers ------------------------------------------------------------------
 
-function LojaDisclaimer({ isPt, storeUrl }) {
-  if (!storeUrl) return null;
-  return (
-    <div className="loja-disclaimer loja-disclaimer--inline" role="note">
-      <svg className="loja-disclaimer-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-        <circle cx="10" cy="10" r="8.5" stroke="currentColor" strokeWidth="1.2"/>
-        <path d="M10 9v5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
-        <circle cx="10" cy="6.5" r=".8" fill="currentColor"/>
-      </svg>
-      <span className="loja-disclaimer-text">
-        {isPt
-          ? <>Mostruário — compras na <strong>Hotprinti</strong>.</>
-          : <>Showcase — purchases on <strong>Hotprinti</strong>.</>}
-      </span>
-      <a className="loja-disclaimer-link" href={storeUrl} target="_blank" rel="noreferrer">
-        {isPt ? 'Ir para a loja →' : 'Go to store →'}
-      </a>
-    </div>
-  );
-}
+
 
 
 function isInAppWebView() {
@@ -445,7 +407,6 @@ function useShopData() {
 }
 
 // --- bg da página ------------------------------------------------------------
-// Tenta carregar store-bg.jpg; se não existir, o CSS define o fallback cinza escuro
 const PAGE_BG = {
   backgroundImage: `url(${process.env.PUBLIC_URL}/images/store-bg.jpg)`,
   backgroundSize: 'cover',
@@ -453,10 +414,66 @@ const PAGE_BG = {
   backgroundAttachment: 'fixed',
 };
 
-// bg do banner — aplicado via style para usar PUBLIC_URL corretamente
-const BANNER_BG_STYLE = {
-  backgroundImage: `url(${process.env.PUBLIC_URL}/images/banner.jpg)`,
-};
+// hook que carrega configurações do banner (textos) do Firestore
+function useBannerConfig() {
+  const [config, setConfig] = useState({
+    showBanner: true, showLogo: true, showBannerText: true,
+    eyebrow: 'Mind of a Dead Body', titleMain: '', titleOutline: '',
+  });
+  useEffect(() => {
+    import('firebase/firestore').then(({ doc, onSnapshot }) => {
+      import('./firebase').then(({ db }) => {
+        const unsub = onSnapshot(
+          doc(db, 'siteData', 'moadb_config'),
+          (snap) => {
+            if (snap.exists()) {
+              const d = snap.data();
+              setConfig({
+                showBanner:   d.showBanner   !== false,
+                showLogo:     d.showLogo     !== false,
+                showBannerText: d.showBannerText !== false,
+                eyebrow:      String(d.bannerEyebrow      || 'Mind of a Dead Body'),
+                titleMain:    String(d.bannerTitleMain    || ''),
+                titleOutline: String(d.bannerTitleOutline || ''),
+              });
+            }
+          },
+          () => {}
+        );
+        return unsub;
+      });
+    });
+  }, []);
+  return config;
+}
+function useLogoUrl() {
+  const [url, setUrl] = useState(null);
+  useEffect(() => {
+    import('./firebase').then(({ storage }) => {
+      import('firebase/storage').then(({ getDownloadURL, ref: storageRef }) => {
+        getDownloadURL(storageRef(storage, 'loja/logo.png'))
+          .then(setUrl)
+          .catch(() => setUrl(`${process.env.PUBLIC_URL}/logo.png`));
+      });
+    });
+  }, []);
+  return url || `${process.env.PUBLIC_URL}/logo.png`;
+}
+
+// hook que carrega a URL do banner do Firebase Storage
+function useBannerUrl() {
+  const [url, setUrl] = useState(null);
+  useEffect(() => {
+    import('./firebase').then(({ storage }) => {
+      import('firebase/storage').then(({ getDownloadURL, ref: storageRef }) => {
+        getDownloadURL(storageRef(storage, 'loja/banner.jpg'))
+          .then(setUrl)
+          .catch(() => setUrl(`${process.env.PUBLIC_URL}/images/banner.jpg`));
+      });
+    });
+  }, []);
+  return url;
+}
 
 // --- card do catálogo com troca de imagem ------------------------------------
 
@@ -613,8 +630,11 @@ function LojaCatalogo({ shopCfg, loading, lang, setLang, storeUrl, filterProps, 
   const isPt = lang === 'pt-BR';
   const items = useMemo(() => shopCfg.items || [], [shopCfg]);
   const isMobile = useIsMobile();
+  const bannerUrl = useBannerUrl();
+  const bannerConfig = useBannerConfig();
+  const logoUrl = useLogoUrl();
 
-  const { catFilter, subcatFilter, search, categorias, subcatMap, selectCatSubcat } = filterProps;
+  const { catFilter, subcatFilter, search, categorias: _cats, subcatMap: _subcatMap, selectCatSubcat } = filterProps; // eslint-disable-line no-unused-vars
 
   const filtered = useMemo(() => {
     let list = catFilter === 'all' ? items : items.filter((i) => i.categoria === catFilter);
@@ -639,17 +659,20 @@ function LojaCatalogo({ shopCfg, loading, lang, setLang, storeUrl, filterProps, 
       <LojaNav lang={lang} setLang={setLang} storeUrl={storeUrl} filterProps={filterProps} categorias={navCategorias} />
 
       <main className="loja-main">
-        <LojaDisclaimer isPt={isPt} storeUrl={storeUrl} />
         <div className="loja-banner">
-          <div className="loja-banner-bg" style={BANNER_BG_STYLE} />
+          <div className="loja-banner-bg" style={bannerConfig.showBanner && bannerUrl ? { backgroundImage: `url(${bannerUrl})` } : {}} />
           <div className="loja-banner-content">
-            <div className="loja-banner-eyebrow">Mind of a Dead Body</div>
-            <div className="loja-banner-title">
-              {isPt ? 'LOJA' : 'STORE'}
-              <span className="loja-banner-title-outline">
-                {isPt ? 'OFICIAL' : 'OFFICIAL'}
-              </span>
-            </div>
+            {bannerConfig.showBannerText && (
+              <>
+                <div className="loja-banner-eyebrow">{bannerConfig.eyebrow}</div>
+                <div className="loja-banner-title">
+                  {bannerConfig.titleMain || (isPt ? 'LOJA' : 'STORE')}
+                  <span className="loja-banner-title-outline">
+                    {bannerConfig.titleOutline || (isPt ? 'OFICIAL' : 'OFFICIAL')}
+                  </span>
+                </div>
+              </>
+            )}
           </div>
         </div>
 
@@ -761,11 +784,6 @@ function LojaCatalogo({ shopCfg, loading, lang, setLang, storeUrl, filterProps, 
 
       <footer className="loja-footer">
         <div className="loja-footer-bottom">
-          {storeUrl && (
-            <a className="loja-footer-store" href={storeUrl} target="_blank" rel="noreferrer">
-              {isPt ? 'Loja oficial →' : 'Official store →'}
-            </a>
-          )}
           <span>© {new Date().getFullYear()} MIND OF A DEAD BODY</span>
         </div>
       </footer>
@@ -838,7 +856,6 @@ function LojaProduto({ shopCfg, loading, lang, setLang, hasSubbar, filterProps, 
       <LojaNav lang={lang} setLang={setLang} backHref={lojaPath()} storeUrl={storeUrl} filterProps={filterProps} categorias={navCategorias} />
 
       <main className="loja-produto-main">
-        <LojaDisclaimer isPt={isPt} storeUrl={storeUrl} />
 
         {/* breadcrumb */}
         <nav className="loja-breadcrumb" aria-label="breadcrumb">
@@ -1091,7 +1108,7 @@ function LojaProduto({ shopCfg, loading, lang, setLang, hasSubbar, filterProps, 
 
 // --- tela de loja offline -----------------------------------------------------
 
-const LOJA_OFFLINE = true; // mude para false para reativar a loja
+const LOJA_OFFLINE = false; // mude para false para reativar a loja
 
 function LojaOffline({ lang }) {
   const isPt = lang === 'pt-BR';

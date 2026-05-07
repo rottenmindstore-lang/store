@@ -2,7 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
 import Loja from './Loja';
-import LojaAdmin from './LojaAdmin';
+import AdminShell from './AdminShell';
 import LojaAdminLogin from './LojaAdminLogin';
 import RequireAuth from './RequireAuth';
 import { AuthProvider } from './authContext';
@@ -24,7 +24,7 @@ root.render(
             path="/admin"
             element={
               <RequireAuth>
-                <LojaAdmin />
+                <AdminShell />
               </RequireAuth>
             }
           />

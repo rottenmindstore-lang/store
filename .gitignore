@@ -15,6 +15,9 @@
 .firebase/
 firebase-debug.log
 firestore-debug.log
+firebase-service-key.json
+*-service-key.json
+*-service-account.json
 
 # misc
 npm-debug.log*
