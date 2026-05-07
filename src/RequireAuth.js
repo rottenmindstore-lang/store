@@ -1,0 +1,9 @@
+import { Navigate } from 'react-router-dom';
+import { useAuth } from './authContext';
+
+export default function RequireAuth({ children }) {
+  const user = useAuth();
+  if (user === undefined) return null; // carregando
+  if (!user) return <Navigate to="/admin/login" replace />;
+  return children;
+}
